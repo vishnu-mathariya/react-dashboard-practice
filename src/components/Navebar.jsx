@@ -1,4 +1,13 @@
-export const Navebar = () => {
+
+
+export const Navebar = ({search, setSearch}) => {
+   
+
+    const handleInput =  (e) =>{
+      setSearch(e.target.value)
+
+      
+    }
   return (
     <div className="border m-4 flex gap-2 justify-between items-center p-4 shadow-md rounded-2xl flex-col md:flex-row ">
       <div className="justify-between flex gap-4 items-center ">
@@ -11,6 +20,8 @@ export const Navebar = () => {
           className="border w-full md:w-96 p-2 rounded-lg  outline-none"
           type="text"
           placeholder="Search..."
+          value={search}
+          onChange={handleInput}
         />
       </div>
 

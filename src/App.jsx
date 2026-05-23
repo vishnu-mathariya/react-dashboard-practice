@@ -1,6 +1,7 @@
 
 import './App.css'
-import { Navebar } from './components/Navebar'
+
+import { Dashboard } from './pages/Dashboard'
 
 function App() {
  
@@ -8,7 +9,8 @@ function App() {
  
    return (
     <div>
-      <Navebar/>
+      
+      <Dashboard/>
     </div>
   )
 }

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { DashboardCard } from "../components/DashboardCard";
 import { Sidebar } from "../components/Sidebar";
 import { Navebar } from "../components/Navebar";
@@ -8,40 +9,18 @@ export const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [editUserId, setEditUserId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [userData, setUserData] = useState([
-    {
-      id: 1,
-      name: "Vishnu",
-      email: "Vishnu@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
+  const timeoutRef = useRef(null);
+  const timer = useRef(null);
 
-    {
-      id: 2,
-      name: "Bharat",
-      email: "bharat@gmail.com",
-      status: "Inactive",
-      role: "Admin",
-    },
-
-    {
-      id: 3,
-      name: "Kunj",
-      email: "kishnu@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
-
-    {
-      id: 4,
-      name: "Jassi",
-      email: "jassiu@gmail.com",
-      status: "Inactive",
-      role: "Admin",
-    },
-  ]);
+  const usersPerPage = 10;
+  const lastUserIndex = currentPage * usersPerPage;
+  const firstUserIndex = lastUserIndex - usersPerPage;
 
   const cardData = [
     {
@@ -66,17 +45,50 @@ export const Dashboard = () => {
     },
   ];
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setError(null);
+      setLoading(true);
 
-  useEffect(()=>{
-    
-  },[])
+      try {
+        const response = await axios.get("https://dummyjson.com/users");
 
-  const tableHeading = ["Name", "Email", "Status", "Role", "Action"];
+        setUserData(response.data.users);
+      } catch (err) {
+        console.log(err);
+        setError("Error occured");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    timeoutRef.current = setTimeout(() => {
+      fetchData();
+    }, 500);
+
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    timer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer.current);
+    };
+  }, [search]);
+
+  const tableHeading = ["Name", "Email", "Gender", "Role", "Action"];
 
   const filteredUsers = userData.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase()),
+    user.firstName.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
+  const currentUsers = filteredUsers.slice(firstUserIndex, lastUserIndex);
 
+  const totalPage = Math.ceil(filteredUsers.length / usersPerPage);
   const handleDelete = (id) => {
     const updateUsers = userData.filter((user) => user.id !== id);
     setUserData(updateUsers);
@@ -84,12 +96,12 @@ export const Dashboard = () => {
 
   const handleEdit = (user) => {
     setEditUserId(user.id);
-    setEditName(user.name);
+    setEditName(user.firstName);
   };
 
   const handleSave = (id) => {
     const updatedUsers = userData.map((user) =>
-      user.id === id ? { ...user, name: editName } : user,
+      user.id === id ? { ...user, firstName: editName } : user,
     );
 
     setUserData(updatedUsers);
@@ -129,55 +141,84 @@ export const Dashboard = () => {
               </thead>
 
               <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="border p-3">
-                      {editUserId === user.id ? (
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="border p-2 rounded"
-                        />
-                      ) : (
-                        user.name
-                      )}
-                    </td>
-                    <td className="border p-3">{user.email}</td>
-
-                    <td
-                      className={`border p-3 ${user.status === "Active" ? "text-green-600" : "text-red-600"}  `}
-                    >
-                      {user.status}
-                    </td>
-                    <td className="border p-3">{user.role}</td>
-                    <td className="border p-3">
-                      <button
-                        className=" cursor-pointer text-red-600"
-                        onClick={() => handleDelete(user.id)}
-                      >
-                        <MdDeleteOutline />
-                      </button>
-                      <button
-                        className="cursor-pointer"
-                        onClick={() => handleEdit(user)}
-                      >
-                        <MdEdit />
-                      </button>
-
-                      {editUserId === user.id && (
-                        <button
-                          className="cursor-pointer "
-                          onClick={() => handleSave(user.id)}
-                        >
-                          <MdSave />
-                        </button>
-                      )}
-                    </td>
+                {error ? (
+                  <tr>
+                    <td colSpan="5">{error}</td>
                   </tr>
-                ))}
+                ) : loading ? (
+                  <tr>
+                    <td colSpan="5">Loading...</td>
+                  </tr>
+                ) : (
+                  currentUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td className="border p-3">
+                        {editUserId === user.id ? (
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="border p-2 rounded"
+                          />
+                        ) : (
+                          user.firstName
+                        )}
+                      </td>
+                      <td className="border p-3">{user.email}</td>
+
+                      <td
+                        className={`border p-3 ${user.gender === "male" ? "text-green-600" : "text-red-600"}  `}
+                      >
+                        {user.gender}
+                      </td>
+                      <td className="border p-3">{user.company.title}</td>
+                      <td className="border p-3">
+                        <button
+                          className=" cursor-pointer text-red-600"
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          <MdDeleteOutline />
+                        </button>
+                        <button
+                          className="cursor-pointer"
+                          onClick={() => handleEdit(user)}
+                        >
+                          <MdEdit />
+                        </button>
+
+                        {editUserId === user.id && (
+                          <button
+                            className="cursor-pointer "
+                            onClick={() => handleSave(user.id)}
+                          >
+                            <MdSave />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
+
+            <div className="m-4 flex gap-4 justify-between ">
+              <button
+                className="border p-1 px-4  bg-red-200 rounded shadow-md cursor-pointer"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+              <p>Page{currentPage}</p>
+
+              <button
+                className="border p-1 px-4  bg-green-200 rounded  shadow-md  cursor-pointer"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPage}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>

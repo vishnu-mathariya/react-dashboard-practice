@@ -1,10 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardCard } from "../components/DashboardCard";
 import { Sidebar } from "../components/Sidebar";
 import { Navebar } from "../components/Navebar";
+import { MdDeleteOutline, MdEdit, MdSave } from "react-icons/md";
 
 export const Dashboard = () => {
   const [search, setSearch] = useState("");
+  const [editUserId, setEditUserId] = useState(null);
+  const [editName, setEditName] = useState("");
+
+  const [userData, setUserData] = useState([
+    {
+      id: 1,
+      name: "Vishnu",
+      email: "Vishnu@gmail.com",
+      status: "Active",
+      role: "Admin",
+    },
+
+    {
+      id: 2,
+      name: "Bharat",
+      email: "bharat@gmail.com",
+      status: "Inactive",
+      role: "Admin",
+    },
+
+    {
+      id: 3,
+      name: "Kunj",
+      email: "kishnu@gmail.com",
+      status: "Active",
+      role: "Admin",
+    },
+
+    {
+      id: 4,
+      name: "Jassi",
+      email: "jassiu@gmail.com",
+      status: "Inactive",
+      role: "Admin",
+    },
+  ]);
 
   const cardData = [
     {
@@ -29,45 +66,35 @@ export const Dashboard = () => {
     },
   ];
 
-  const userData = [
-    {
-      id: 1,
-      name: "Vishnu",
-      email: "Vishnu@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
 
-    {
-      id: 2,
-      name: "Bharat",
-      email: "bharat@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
+  useEffect(()=>{
+    
+  },[])
 
-    {
-      id: 3,
-      name: "Kunj",
-      email: "kishnu@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
-
-    {
-      id: 4,
-      name: "Jassi",
-      email: "jassiu@gmail.com",
-      status: "Active",
-      role: "Admin",
-    },
-  ];
-
-  const tableHeading = ["Name", "Email", "Status", "Role"];
+  const tableHeading = ["Name", "Email", "Status", "Role", "Action"];
 
   const filteredUsers = userData.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const handleDelete = (id) => {
+    const updateUsers = userData.filter((user) => user.id !== id);
+    setUserData(updateUsers);
+  };
+
+  const handleEdit = (user) => {
+    setEditUserId(user.id);
+    setEditName(user.name);
+  };
+
+  const handleSave = (id) => {
+    const updatedUsers = userData.map((user) =>
+      user.id === id ? { ...user, name: editName } : user,
+    );
+
+    setUserData(updatedUsers);
+    setEditUserId(null);
+  };
   return (
     <div>
       <Navebar search={search} setSearch={setSearch} />
@@ -104,10 +131,49 @@ export const Dashboard = () => {
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr key={user.id}>
-                    <td className="border p-3">{user.name}</td>
+                    <td className="border p-3">
+                      {editUserId === user.id ? (
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="border p-2 rounded"
+                        />
+                      ) : (
+                        user.name
+                      )}
+                    </td>
                     <td className="border p-3">{user.email}</td>
-                    <td className="border p-3">{user.status}</td>
+
+                    <td
+                      className={`border p-3 ${user.status === "Active" ? "text-green-600" : "text-red-600"}  `}
+                    >
+                      {user.status}
+                    </td>
                     <td className="border p-3">{user.role}</td>
+                    <td className="border p-3">
+                      <button
+                        className=" cursor-pointer text-red-600"
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        <MdDeleteOutline />
+                      </button>
+                      <button
+                        className="cursor-pointer"
+                        onClick={() => handleEdit(user)}
+                      >
+                        <MdEdit />
+                      </button>
+
+                      {editUserId === user.id && (
+                        <button
+                          className="cursor-pointer "
+                          onClick={() => handleSave(user.id)}
+                        >
+                          <MdSave />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
